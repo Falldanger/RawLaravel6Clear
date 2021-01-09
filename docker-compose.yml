@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:12.4-alpine
+    restart: on-failure
+    environment:
+      POSTGRES_DB: test
+      POSTGRES_USER: laravel_user
+      POSTGRES_PASSWORD: random_password
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  php:
+    build:
+      context: .
+      target: app_php
+    image: laravel-docker/php:dev
+    restart: on-failure
+    environment:
+      APP_ENV: dev
+      APP_DEBUG: 1
+    depends_on:
+      - postgres
+    volumes:
+      - .:/app:rw,cached
+
+  nginx:
+    build:
+      context: .
+      target: app_nginx
+    image: laravel-docker/nginx:dev
+    restart: on-failure
+    depends_on:
+      - php
+    volumes:
+      - ./public:/app/public:ro
+    ports:
+      - "8080:80"
